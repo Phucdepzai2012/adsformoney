@@ -6,10 +6,11 @@
 <title>AdWatch – Xem quảng cáo kiếm tiền</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- Firebase SDKs -->
+<!-- Firebase SDKs (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
 
 <style>
 :root {
@@ -29,7 +30,6 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:'Be Vietnam Pro',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
 
-/* ── BG GLOW ── */
 body::before {
   content:''; position:fixed; top:-300px; left:-300px;
   width:700px; height:700px;
@@ -43,9 +43,6 @@ body::after {
   pointer-events:none; z-index:0;
 }
 
-/* ══════════════════════════════════
-   AUTH SCREEN
-══════════════════════════════════ */
 #auth-screen {
   min-height:100vh; display:flex; align-items:center; justify-content:center;
   padding:20px; position:relative; z-index:1;
@@ -106,6 +103,7 @@ body::after {
 }
 .btn-auth:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(245,200,66,.35); }
 .btn-auth:active { transform:translateY(0); }
+.btn-auth:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 
 .auth-error {
   background:rgba(231,76,60,.12); border:1px solid rgba(231,76,60,.25);
@@ -121,12 +119,8 @@ body::after {
 .perk { text-align:center; font-size:12px; color:var(--muted); }
 .perk .pi { font-size:22px; margin-bottom:4px; }
 
-/* ══════════════════════════════════
-   MAIN APP
-══════════════════════════════════ */
 #app-screen { display:none; }
 
-/* NAV */
 nav {
   position:sticky; top:0; z-index:100;
   background:rgba(8,8,16,.88); backdrop-filter:blur(24px);
@@ -166,12 +160,10 @@ nav {
 }
 .btn-logout:hover { color:var(--red); border-color:rgba(231,76,60,.3); }
 
-/* VIEW */
 .view { display:none; }
 .view.active { display:block; animation:fadeUp .3s ease; }
 .container { max-width:920px; margin:0 auto; padding:28px 16px; }
 
-/* STATS */
 .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
 .stat-card {
   background:var(--s1); border:1px solid rgba(255,255,255,.05);
@@ -190,7 +182,6 @@ nav {
 .sc-val.b { color:var(--blue); }
 .sc-sub { font-size:11px; color:var(--muted); margin-top:3px; }
 
-/* SECTION TITLE */
 .sec-title {
   font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:2px;
   color:var(--muted); margin-bottom:14px;
@@ -198,7 +189,6 @@ nav {
 }
 .sec-title::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.05); }
 
-/* AD GRID */
 .ad-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; margin-bottom:28px; }
 .ad-card {
   background:var(--s1); border:1px solid rgba(255,255,255,.05);
@@ -253,7 +243,6 @@ nav {
   50%{box-shadow:0 0 0 8px rgba(46,204,113,0)}
 }
 
-/* WATCHED BADGE */
 .watched-badge {
   background:var(--s2); border:1px solid rgba(46,204,113,.2);
   border-radius:8px; padding:8px 14px;
@@ -262,7 +251,6 @@ nav {
   justify-content:center;
 }
 
-/* WITHDRAW */
 .withdraw-card {
   background:var(--s1); border:1px solid rgba(255,255,255,.05);
   border-radius:var(--r); padding:24px; margin-bottom:28px;
@@ -291,7 +279,6 @@ nav {
   border-radius:8px; border-left:3px solid var(--gold);
 }
 
-/* HISTORY */
 .hist-list { display:flex; flex-direction:column; gap:9px; }
 .hist-item {
   background:var(--s1); border:1px solid rgba(255,255,255,.04);
@@ -313,7 +300,6 @@ nav {
 .hist-amt.wd { color:var(--gold); }
 .empty-state { text-align:center; color:var(--muted); padding:32px; font-size:14px; }
 
-/* ADVERTISER */
 .adv-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:28px; }
 .form-card {
   background:var(--s1); border:1px solid rgba(255,255,255,.05);
@@ -356,7 +342,6 @@ nav {
 .as-lbl { font-size:13px; color:var(--muted); }
 .as-val { font-weight:700; font-size:16px; color:var(--gold); }
 
-/* TABLE */
 .tbl-wrap {
   background:var(--s1); border:1px solid rgba(255,255,255,.05);
   border-radius:var(--r); overflow:hidden; margin-bottom:28px;
@@ -373,7 +358,6 @@ nav {
 .badge.on { background:rgba(46,204,113,.12); color:var(--green); }
 .badge.pending { background:rgba(245,200,66,.08); color:var(--gold); }
 
-/* MODAL */
 .modal-bg {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
@@ -406,7 +390,6 @@ nav {
   font-family:'Be Vietnam Pro',sans-serif; font-weight:800; cursor:pointer;
 }
 
-/* TOAST */
 #toast {
   position:fixed; bottom:28px; right:28px; z-index:999;
   background:var(--s2); border:1px solid rgba(245,200,66,.25);
@@ -419,7 +402,6 @@ nav {
 }
 #toast.show { transform:translateY(0); opacity:1; }
 
-/* LOADING SPINNER */
 #loading-screen {
   position:fixed; inset:0; background:var(--bg);
   display:flex; align-items:center; justify-content:center;
@@ -443,13 +425,11 @@ nav {
 </head>
 <body>
 
-<!-- LOADING -->
 <div id="loading-screen">
   <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);letter-spacing:3px;">Ad<span style="color:var(--text)">Watch</span></div>
   <div class="spinner"></div>
 </div>
 
-<!-- ══ AUTH SCREEN ══════════════════════════════════════ -->
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-logo">Ad<span>Watch</span></div>
@@ -462,7 +442,6 @@ nav {
 
     <div class="auth-error" id="auth-error"></div>
 
-    <!-- LOGIN -->
     <div id="tab-login">
       <div class="form-field">
         <label>EMAIL</label>
@@ -472,10 +451,9 @@ nav {
         <label>MẬT KHẨU</label>
         <input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
-      <button class="btn-auth" onclick="doLogin()">Đăng nhập →</button>
+      <button class="btn-auth" id="btn-login" onclick="doLogin()">Đăng nhập →</button>
     </div>
 
-    <!-- REGISTER -->
     <div id="tab-register" style="display:none">
       <div class="form-field">
         <label>HỌ VÀ TÊN</label>
@@ -489,7 +467,7 @@ nav {
         <label>MẬT KHẨU (ít nhất 6 ký tự)</label>
         <input type="password" id="reg-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()">
       </div>
-      <button class="btn-auth" onclick="doRegister()">Tạo tài khoản →</button>
+      <button class="btn-auth" id="btn-register" onclick="doRegister()">Tạo tài khoản →</button>
     </div>
 
     <div class="auth-perks">
@@ -500,7 +478,6 @@ nav {
   </div>
 </div>
 
-<!-- ══ MAIN APP ══════════════════════════════════════════ -->
 <div id="app-screen">
   <nav>
     <div class="logo">Ad<span>Watch</span></div>
@@ -515,7 +492,6 @@ nav {
     </div>
   </nav>
 
-  <!-- USER VIEW -->
   <div class="view active" id="view-user">
     <div class="container">
       <div class="stats-row">
@@ -569,7 +545,6 @@ nav {
     </div>
   </div>
 
-  <!-- ADVERTISER VIEW -->
   <div class="view" id="view-advertiser">
     <div class="container">
       <div class="adv-grid">
@@ -621,7 +596,6 @@ nav {
   </div>
 </div>
 
-<!-- WITHDRAW MODAL -->
 <div class="modal-bg" id="wd-modal">
   <div class="modal">
     <h3>Xác nhận rút tiền</h3>
@@ -634,27 +608,29 @@ nav {
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast"><span id="toast-icon">🎉</span> <span id="toast-msg"></span></div>
 
 <script>
 // ══════════════════════════════════════════════════════════
-//  FIREBASE CONFIG — THAY BẰNG CONFIG CỦA BẠN
+//  FIREBASE CONFIG – vietnam-life-game
 // ══════════════════════════════════════════════════════════
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey:            "AIzaSyCDQsJ_NrGK5ouRLS7vFr55OBZQ0nKhHSk",
+  authDomain:        "vietnam-life-game.firebaseapp.com",
+  databaseURL:       "https://vietnam-life-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "vietnam-life-game",
+  storageBucket:     "vietnam-life-game.firebasestorage.app",
+  messagingSenderId: "134954120781",
+  appId:             "1:134954120781:web:d7f762adb80bfce3140e04",
+  measurementId:     "G-39VPPE1F9T"
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
+const auth      = firebase.auth();
+const db        = firebase.firestore();
+const analytics = firebase.analytics();
 
-// ── AD POOL (mặc định) ──────────────────────────────────
+// ── AD POOL mặc định ─────────────────────────────────────
 const DEFAULT_ADS = [
   { id:'ad1', brand:'Coca-Cola Việt Nam', title:'Taste The Feeling – Hè 2025', videoId:'8SbUC-UaAxE', reward:30 },
   { id:'ad2', brand:'Samsung Mobile',     title:'Galaxy S25 – Trải nghiệm AI', videoId:'dQw4w9WgXcQ', reward:30 },
@@ -664,7 +640,7 @@ const DEFAULT_ADS = [
   { id:'ad6', brand:'TikTok Shop',        title:'Mua sắm trực tiếp hôm nay',   videoId:'eVTXPUF4Oz4', reward:30 },
 ];
 
-// ── STATE ────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────
 let currentUser = null;
 let userData    = { balance:0, totalEarned:0, watchedToday:0, history:[], myAds:[], watchedAdsToday:[] };
 let pendingWd   = 0;
@@ -672,7 +648,7 @@ const watching  = {};
 let allAds      = [...DEFAULT_ADS];
 
 // ══════════════════════════════════════════════════════════
-//  AUTH STATE
+//  AUTH STATE LISTENER
 // ══════════════════════════════════════════════════════════
 auth.onAuthStateChanged(async user => {
   document.getElementById('loading-screen').style.display = 'none';
@@ -693,19 +669,21 @@ function showAuth() {
 function showApp() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-screen').style.display  = 'block';
-  document.getElementById('nav-name').textContent = userData.displayName || currentUser.email.split('@')[0];
+  document.getElementById('nav-name').textContent =
+    userData.displayName || currentUser.displayName || currentUser.email.split('@')[0];
   renderAll();
 }
 
-// ── LOAD USER DATA ───────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+//  FIRESTORE: LOAD / SAVE
+// ══════════════════════════════════════════════════════════
 async function loadUserData() {
   const snap = await db.collection('users').doc(currentUser.uid).get();
   if (snap.exists) {
     const d = snap.data();
-    // reset watchedToday nếu khác ngày
     const today = new Date().toDateString();
     userData = {
-      displayName:     d.displayName || '',
+      displayName:     d.displayName || currentUser.displayName || '',
       balance:         d.balance || 0,
       totalEarned:     d.totalEarned || 0,
       watchedToday:    d.lastWatchedDate === today ? (d.watchedToday || 0) : 0,
@@ -714,10 +692,13 @@ async function loadUserData() {
       myAds:           d.myAds || [],
     };
   } else {
-    userData = { displayName:'', balance:0, totalEarned:0, watchedToday:0, watchedAdsToday:[], history:[], myAds:[] };
+    userData = {
+      displayName: currentUser.displayName || '',
+      balance:0, totalEarned:0, watchedToday:0,
+      watchedAdsToday:[], history:[], myAds:[],
+    };
     await saveUserData();
   }
-  // load ads từ firestore (của các advertiser khác)
   await loadAllAds();
 }
 
@@ -730,7 +711,7 @@ async function saveUserData() {
     watchedToday:    userData.watchedToday,
     watchedAdsToday: userData.watchedAdsToday,
     lastWatchedDate: new Date().toDateString(),
-    history:         userData.history.slice(0,50),
+    history:         userData.history.slice(0, 50),
     myAds:           userData.myAds,
     email:           currentUser.email,
     updatedAt:       firebase.firestore.FieldValue.serverTimestamp(),
@@ -742,7 +723,9 @@ async function loadAllAds() {
     const snap = await db.collection('ads').where('active','==',true).get();
     const firestoreAds = snap.docs.map(d => ({ id:d.id, ...d.data() }));
     allAds = [...DEFAULT_ADS, ...firestoreAds];
-  } catch(e) { allAds = [...DEFAULT_ADS]; }
+  } catch(e) {
+    allAds = [...DEFAULT_ADS];
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -762,20 +745,38 @@ function setAuthError(msg) {
   el.style.display = msg ? 'block' : 'none';
 }
 
+// Bảng map tất cả error codes Firebase Auth (kể cả v9+)
+const AUTH_ERRORS = {
+  'auth/user-not-found':         'Email chưa được đăng ký.',
+  'auth/wrong-password':         'Mật khẩu không đúng.',
+  'auth/invalid-credential':     'Email hoặc mật khẩu không chính xác.',
+  'auth/invalid-email':          'Địa chỉ email không hợp lệ.',
+  'auth/email-already-in-use':   'Email này đã được sử dụng.',
+  'auth/weak-password':          'Mật khẩu quá yếu (tối thiểu 6 ký tự).',
+  'auth/too-many-requests':      'Quá nhiều lần thử. Vui lòng thử lại sau.',
+  'auth/network-request-failed': 'Lỗi kết nối mạng. Kiểm tra internet.',
+  'auth/operation-not-allowed':  'Phương thức đăng nhập chưa được bật trong Firebase.',
+  'auth/user-disabled':          'Tài khoản này đã bị vô hiệu hóa.',
+  'auth/popup-closed-by-user':   'Cửa sổ đăng nhập bị đóng.',
+};
+
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pw    = document.getElementById('login-pw').value;
-  if (!email||!pw) return setAuthError('Vui lòng điền đầy đủ thông tin.');
+  if (!email || !pw) return setAuthError('Vui lòng điền đầy đủ thông tin.');
+
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Đang đăng nhập...';
+
   try {
     await auth.signInWithEmailAndPassword(email, pw);
+    // onAuthStateChanged sẽ tự xử lý tiếp
   } catch(e) {
-    const msgs = {
-      'auth/user-not-found':'Email chưa được đăng ký.',
-      'auth/wrong-password':'Mật khẩu không đúng.',
-      'auth/invalid-email':'Email không hợp lệ.',
-      'auth/too-many-requests':'Quá nhiều lần thử. Vui lòng thử lại sau.',
-    };
-    setAuthError(msgs[e.code] || 'Đăng nhập thất bại. Thử lại.');
+    console.error('[Login error]', e.code, e.message);
+    setAuthError(AUTH_ERRORS[e.code] || `Lỗi: ${e.code}`);
+    btn.disabled = false;
+    btn.textContent = 'Đăng nhập →';
   }
 }
 
@@ -783,21 +784,26 @@ async function doRegister() {
   const name  = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const pw    = document.getElementById('reg-pw').value;
-  if (!name||!email||!pw) return setAuthError('Vui lòng điền đầy đủ thông tin.');
+
+  if (!name || !email || !pw) return setAuthError('Vui lòng điền đầy đủ thông tin.');
   if (pw.length < 6) return setAuthError('Mật khẩu phải ít nhất 6 ký tự.');
+
+  const btn = document.getElementById('btn-register');
+  btn.disabled = true;
+  btn.textContent = 'Đang tạo tài khoản...';
+
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pw);
     await cred.user.updateProfile({ displayName: name });
     userData.displayName = name;
     await saveUserData();
     showToast(`Chào mừng ${name}! 🎉 Tài khoản đã được tạo.`);
+    // onAuthStateChanged sẽ tự xử lý showApp()
   } catch(e) {
-    const msgs = {
-      'auth/email-already-in-use':'Email này đã được sử dụng.',
-      'auth/invalid-email':'Email không hợp lệ.',
-      'auth/weak-password':'Mật khẩu quá yếu.',
-    };
-    setAuthError(msgs[e.code] || 'Đăng ký thất bại. Thử lại.');
+    console.error('[Register error]', e.code, e.message);
+    setAuthError(AUTH_ERRORS[e.code] || `Lỗi: ${e.code}`);
+    btn.disabled = false;
+    btn.textContent = 'Tạo tài khoản →';
   }
 }
 
@@ -820,15 +826,15 @@ function renderAll() {
 function updateStats() {
   const b = userData.balance.toLocaleString();
   const t = userData.totalEarned.toLocaleString();
-  document.getElementById('bal-display').textContent  = b+'đ';
-  document.getElementById('nav-bal').textContent      = b+'đ';
+  document.getElementById('bal-display').textContent   = b + 'đ';
+  document.getElementById('nav-bal').textContent       = b + 'đ';
   document.getElementById('watched-today').textContent = userData.watchedToday;
-  document.getElementById('total-earned').textContent  = t+'đ';
+  document.getElementById('total-earned').textContent  = t + 'đ';
 }
 
 function renderAds() {
   const grid = document.getElementById('ad-grid');
-  grid.innerHTML = allAds.map((ad,i) => {
+  grid.innerHTML = allAds.map((ad, i) => {
     const done = userData.watchedAdsToday.includes(ad.id);
     return `
     <div class="ad-card" id="adcard-${i}">
@@ -858,7 +864,7 @@ function renderAds() {
   }).join('');
 }
 
-// ── WATCH ────────────────────────────────────────────────
+// ── WATCH ─────────────────────────────────────────────────
 function startWatch(i, adId) {
   if (watching[i]) return;
   if (userData.watchedAdsToday.includes(adId)) return showToast('✅ Bạn đã xem quảng cáo này hôm nay!');
@@ -872,13 +878,13 @@ function startWatch(i, adId) {
   iframe.src = iframe.src.replace('autoplay=0','autoplay=1');
 
   const dur = 15; let elapsed = 0;
-  const bar = document.getElementById(`pb-${i}`);
-  const txt = document.getElementById(`pb-txt-${i}`);
+  const bar     = document.getElementById(`pb-${i}`);
+  const txt     = document.getElementById(`pb-txt-${i}`);
   const doneBtn = document.getElementById(`done-${i}`);
 
   const iv = setInterval(() => {
     elapsed++;
-    bar.style.width = (elapsed/dur*100)+'%';
+    bar.style.width = (elapsed / dur * 100) + '%';
     txt.textContent = `Đang xem... ${elapsed}s / ${dur}s`;
     if (elapsed >= dur) {
       clearInterval(iv);
@@ -904,18 +910,21 @@ async function claimReward(i, adId, amount, brand) {
 
   await saveUserData();
 
-  // update lượt xem trên firestore ad doc nếu là ad custom
-  try { await db.collection('ads').doc(adId).update({ views: firebase.firestore.FieldValue.increment(1) }); } catch(e){}
+  try {
+    await db.collection('ads').doc(adId).update({
+      views: firebase.firestore.FieldValue.increment(1)
+    });
+  } catch(e) { /* ad mặc định ko có trong firestore – bỏ qua */ }
 
   watching[i] = false;
   renderAds();
 }
 
-// ── WITHDRAW ─────────────────────────────────────────────
+// ── WITHDRAW ──────────────────────────────────────────────
 function requestWithdraw() {
   const amt = parseInt(document.getElementById('wd-amt').value);
-  if (!amt || amt < 300) return showToast('❌ Tối thiểu rút 300đ!');
-  if (amt > userData.balance) return showToast('❌ Số dư không đủ!');
+  if (!amt || amt < 300)        return showToast('❌ Tối thiểu rút 300đ!');
+  if (amt > userData.balance)   return showToast('❌ Số dư không đủ!');
   pendingWd = amt;
   document.getElementById('modal-amt').innerHTML = `${amt.toLocaleString()} <span>đồng</span>`;
   document.getElementById('wd-modal').classList.add('open');
@@ -932,14 +941,12 @@ async function confirmWithdraw() {
     time: new Date().toLocaleString('vi-VN')
   });
 
-  // Lưu yêu cầu rút vào firestore để admin xử lý
   await db.collection('withdrawals').add({
     uid:      currentUser.uid,
     email:    currentUser.email,
     name:     userData.displayName,
     amount:   pendingWd,
-    method,
-    account,
+    method,   account,
     status:   'pending',
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
@@ -949,12 +956,12 @@ async function confirmWithdraw() {
   renderHistory();
   showToast(`💸 Yêu cầu rút ${pendingWd.toLocaleString()}đ đã gửi!`);
   closeModal();
-  document.getElementById('wd-amt').value = '';
+  document.getElementById('wd-amt').value     = '';
   document.getElementById('wd-account').value = '';
   pendingWd = 0;
 }
 
-// ── HISTORY ──────────────────────────────────────────────
+// ── HISTORY ───────────────────────────────────────────────
 function renderHistory() {
   const list = document.getElementById('hist-list');
   if (!userData.history.length) {
@@ -976,7 +983,7 @@ function renderHistory() {
     </div>`).join('');
 }
 
-// ── ADVERTISER ───────────────────────────────────────────
+// ── ADVERTISER ────────────────────────────────────────────
 async function submitAd() {
   const brand  = document.getElementById('adv-brand').value.trim();
   const title  = document.getElementById('adv-title').value.trim();
@@ -984,8 +991,8 @@ async function submitAd() {
   const budget = parseInt(document.getElementById('adv-budget').value);
   const note   = document.getElementById('adv-note').value.trim();
 
-  if (!brand||!title) return showToast('❌ Vui lòng điền đầy đủ!');
-  if (!budget||budget<300) return showToast('❌ Ngân sách tối thiểu 300đ!');
+  if (!brand || !title) return showToast('❌ Vui lòng điền đầy đủ!');
+  if (!budget || budget < 300) return showToast('❌ Ngân sách tối thiểu 300đ!');
 
   let videoId = 'dQw4w9WgXcQ';
   const m = video.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -994,9 +1001,9 @@ async function submitAd() {
   const adDoc = {
     brand, title, videoId, budget, budgetLeft: budget,
     note, views: 0, reward: 30, active: true,
-    ownerId: currentUser.uid,
+    ownerId:    currentUser.uid,
     ownerEmail: currentUser.email,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt:  firebase.firestore.FieldValue.serverTimestamp(),
   };
 
   const ref = await db.collection('ads').add(adDoc);
@@ -1029,31 +1036,31 @@ function renderAdvTable() {
 }
 
 function updateAdvStats() {
-  const total   = userData.myAds.reduce((s,a)=>s+(a.budget||0),0);
-  const spent   = userData.myAds.reduce((s,a)=>s+((a.views||0)*30),0);
-  const active  = userData.myAds.length;
-  document.getElementById('my-views').textContent      = userData.myAds.reduce((s,a)=>s+(a.views||0),0);
-  document.getElementById('my-spent').textContent      = spent.toLocaleString()+'đ';
-  document.getElementById('my-active').textContent     = active;
-  document.getElementById('my-budget-left').textContent= (total-spent).toLocaleString()+'đ';
+  const total  = userData.myAds.reduce((s,a) => s+(a.budget||0), 0);
+  const spent  = userData.myAds.reduce((s,a) => s+((a.views||0)*30), 0);
+  const active = userData.myAds.length;
+  document.getElementById('my-views').textContent       = userData.myAds.reduce((s,a)=>s+(a.views||0),0);
+  document.getElementById('my-spent').textContent       = spent.toLocaleString()+'đ';
+  document.getElementById('my-active').textContent      = active;
+  document.getElementById('my-budget-left').textContent = (total-spent).toLocaleString()+'đ';
 }
 
-// ── NAV ──────────────────────────────────────────────────
+// ── NAV ───────────────────────────────────────────────────
 function switchView(v, btn) {
-  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById(`view-${v}`).classList.add('active');
-  if(btn) btn.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
-// ── TOAST ────────────────────────────────────────────────
+// ── TOAST ─────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
   document.getElementById('toast-msg').textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 </script>
 </body>
