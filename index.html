@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdWatch – Xem quảng cáo kiếm tiền</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root {
+  --gold: #f5c842;
+  --gold-dk: #c9a000;
+  --bg: #080810;
+  --s1: #10101c;
+  --s2: #18182a;
+  --s3: #222236;
+  --text: #eeeeff;
+  --muted: #6060a0;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --blue: #4f8ef7;
+  --r: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Be Vietnam Pro',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+/* ── BG GLOW ── */
+body::before {
+  content:''; position:fixed; top:-300px; left:-300px;
+  width:700px; height:700px;
+  background:radial-gradient(circle,rgba(245,200,66,.05) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+}
+body::after {
+  content:''; position:fixed; bottom:-200px; right:-200px;
+  width:500px; height:500px;
+  background:radial-gradient(circle,rgba(79,142,247,.04) 0%,transparent 70%);
+  pointer-events:none; z-index:0;
+}
+
+/* ══════════════════════════════════
+   AUTH SCREEN
+══════════════════════════════════ */
+#auth-screen {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  padding:20px; position:relative; z-index:1;
+}
+
+.auth-box {
+  background:var(--s1);
+  border:1px solid rgba(245,200,66,.12);
+  border-radius:24px;
+  padding:48px 40px;
+  width:100%; max-width:420px;
+  box-shadow:0 32px 80px rgba(0,0,0,.5);
+  animation:popIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes popIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+@keyframes fadeUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+.auth-logo {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:42px; letter-spacing:3px;
+  color:var(--gold); text-align:center;
+  margin-bottom:4px;
+}
+.auth-logo span { color:var(--text); }
+.auth-tagline { text-align:center; color:var(--muted); font-size:13px; margin-bottom:36px; }
+
+.auth-tabs {
+  display:flex; background:var(--s2); border-radius:12px; padding:4px;
+  margin-bottom:28px;
+}
+.auth-tab {
+  flex:1; padding:10px; border-radius:10px; border:none; background:none;
+  color:var(--muted); font-family:'Be Vietnam Pro',sans-serif; font-size:14px;
+  font-weight:600; cursor:pointer; transition:all .2s;
+}
+.auth-tab.active { background:var(--gold); color:#000; }
+
+.form-field { margin-bottom:16px; }
+.form-field label { display:block; font-size:12px; color:var(--muted); letter-spacing:.5px; margin-bottom:6px; }
+.form-field input {
+  width:100%; padding:13px 16px;
+  background:var(--s2); border:1px solid rgba(255,255,255,.07);
+  border-radius:11px; color:var(--text);
+  font-family:'Be Vietnam Pro',sans-serif; font-size:15px;
+  outline:none; transition:border-color .2s;
+}
+.form-field input:focus { border-color:var(--gold); }
+.form-field input::placeholder { color:var(--muted); }
+
+.btn-auth {
+  width:100%; padding:14px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  color:#000; border:none; border-radius:11px;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:800; font-size:16px;
+  cursor:pointer; margin-top:8px; transition:all .2s;
+  position:relative; overflow:hidden;
+}
+.btn-auth:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(245,200,66,.35); }
+.btn-auth:active { transform:translateY(0); }
+
+.auth-error {
+  background:rgba(231,76,60,.12); border:1px solid rgba(231,76,60,.25);
+  border-radius:10px; padding:11px 14px;
+  font-size:13px; color:#ff7675; margin-bottom:16px; display:none;
+}
+
+.auth-perks {
+  display:flex; justify-content:center; gap:24px;
+  margin-top:24px; padding-top:24px;
+  border-top:1px solid rgba(255,255,255,.05);
+}
+.perk { text-align:center; font-size:12px; color:var(--muted); }
+.perk .pi { font-size:22px; margin-bottom:4px; }
+
+/* ══════════════════════════════════
+   MAIN APP
+══════════════════════════════════ */
+#app-screen { display:none; }
+
+/* NAV */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(8,8,16,.88); backdrop-filter:blur(24px);
+  border-bottom:1px solid rgba(245,200,66,.08);
+  height:62px; padding:0 20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.logo { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; color:var(--gold); }
+.logo span { color:var(--text); }
+
+.nav-tabs {
+  display:flex; gap:3px; background:var(--s2);
+  border-radius:12px; padding:4px;
+}
+.nav-tab {
+  padding:7px 18px; border-radius:10px; border:none; background:none;
+  color:var(--muted); font-family:'Be Vietnam Pro',sans-serif;
+  font-size:13px; font-weight:600; cursor:pointer; transition:all .2s;
+}
+.nav-tab.active { background:var(--gold); color:#000; }
+
+.nav-right { display:flex; align-items:center; gap:10px; }
+.wallet-pill {
+  background:var(--s2); border:1px solid rgba(245,200,66,.18);
+  border-radius:12px; padding:7px 14px;
+  font-size:14px; font-weight:700; color:var(--gold);
+  display:flex; align-items:center; gap:6px;
+}
+.user-pill {
+  background:var(--s2); border-radius:12px; padding:7px 14px;
+  font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px;
+}
+.btn-logout {
+  padding:7px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.08);
+  background:none; color:var(--muted); font-family:'Be Vietnam Pro',sans-serif;
+  font-size:13px; cursor:pointer; transition:all .2s;
+}
+.btn-logout:hover { color:var(--red); border-color:rgba(231,76,60,.3); }
+
+/* VIEW */
+.view { display:none; }
+.view.active { display:block; animation:fadeUp .3s ease; }
+.container { max-width:920px; margin:0 auto; padding:28px 16px; }
+
+/* STATS */
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
+.stat-card {
+  background:var(--s1); border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--r); padding:22px; position:relative; overflow:hidden;
+}
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.stat-card.g::before { background:linear-gradient(90deg,var(--gold),var(--gold-dk)); }
+.stat-card.gr::before { background:linear-gradient(90deg,var(--green),#27ae60); }
+.stat-card.b::before { background:linear-gradient(90deg,var(--blue),#818cf8); }
+.sc-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.sc-val { font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:1px; }
+.sc-val.g { color:var(--gold); }
+.sc-val.gr { color:var(--green); }
+.sc-val.b { color:var(--blue); }
+.sc-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+
+/* SECTION TITLE */
+.sec-title {
+  font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:2px;
+  color:var(--muted); margin-bottom:14px;
+  display:flex; align-items:center; gap:10px;
+}
+.sec-title::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.05); }
+
+/* AD GRID */
+.ad-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; margin-bottom:28px; }
+.ad-card {
+  background:var(--s1); border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--r); overflow:hidden; transition:transform .2s,border-color .2s;
+}
+.ad-card:hover { transform:translateY(-3px); border-color:rgba(245,200,66,.18); }
+.ad-thumb { position:relative; aspect-ratio:16/9; background:var(--s2); overflow:hidden; }
+.ad-thumb iframe { width:100%; height:100%; border:none; pointer-events:none; }
+.play-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,.5);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:background .2s;
+}
+.ad-card.watching .play-overlay { display:none; }
+.play-overlay:hover { background:rgba(0,0,0,.3); }
+.play-btn {
+  width:52px; height:52px; background:var(--gold); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:20px;
+  box-shadow:0 0 24px rgba(245,200,66,.45); transition:transform .2s;
+}
+.play-overlay:hover .play-btn { transform:scale(1.1); }
+.ad-info { padding:14px; }
+.ad-brand { font-size:11px; color:var(--muted); margin-bottom:3px; }
+.ad-title { font-weight:600; font-size:14px; margin-bottom:10px; }
+.ad-footer { display:flex; align-items:center; justify-content:space-between; }
+.ad-reward {
+  display:flex; align-items:center; gap:5px;
+  background:rgba(245,200,66,.08); border:1px solid rgba(245,200,66,.18);
+  border-radius:8px; padding:5px 10px; font-size:13px; font-weight:700; color:var(--gold);
+}
+.watch-btn {
+  padding:8px 16px; background:var(--gold); color:#000; border:none;
+  border-radius:9px; font-family:'Be Vietnam Pro',sans-serif; font-weight:700;
+  font-size:13px; cursor:pointer; transition:all .2s;
+}
+.watch-btn:hover { background:var(--gold-dk); }
+.watch-btn:disabled { background:var(--s3); color:var(--muted); cursor:not-allowed; }
+.ad-progress { display:none; padding:10px 14px 14px; }
+.ad-card.watching .ad-progress { display:block; }
+.ad-card.watching .watch-btn { display:none; }
+.pb-wrap { background:var(--s3); border-radius:6px; height:7px; overflow:hidden; margin-bottom:7px; }
+.pb { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-dk)); border-radius:6px; width:0%; transition:width .5s linear; }
+.pb-txt { font-size:12px; color:var(--muted); text-align:center; margin-bottom:8px; }
+.done-btn {
+  width:100%; padding:10px; background:var(--green); color:#fff; border:none;
+  border-radius:9px; font-family:'Be Vietnam Pro',sans-serif; font-weight:700;
+  font-size:14px; cursor:pointer; display:none;
+  animation:pulseG 1.2s ease infinite;
+}
+@keyframes pulseG {
+  0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.4)}
+  50%{box-shadow:0 0 0 8px rgba(46,204,113,0)}
+}
+
+/* WATCHED BADGE */
+.watched-badge {
+  background:var(--s2); border:1px solid rgba(46,204,113,.2);
+  border-radius:8px; padding:8px 14px;
+  font-size:13px; color:var(--green); font-weight:600;
+  display:flex; align-items:center; gap:6px; width:100%;
+  justify-content:center;
+}
+
+/* WITHDRAW */
+.withdraw-card {
+  background:var(--s1); border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--r); padding:24px; margin-bottom:28px;
+}
+.wr-row { display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; }
+.inp-grp { flex:1; min-width:150px; }
+.inp-grp label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+.inp-grp input, .inp-grp select {
+  width:100%; padding:12px 14px; background:var(--s2);
+  border:1px solid rgba(255,255,255,.08); border-radius:10px;
+  color:var(--text); font-family:'Be Vietnam Pro',sans-serif; font-size:14px; outline:none;
+  transition:border-color .2s;
+}
+.inp-grp input:focus, .inp-grp select:focus { border-color:var(--gold); }
+.inp-grp select option { background:var(--s2); }
+.btn-withdraw {
+  padding:12px 24px; background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  color:#000; border:none; border-radius:10px;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:800; font-size:14px;
+  cursor:pointer; white-space:nowrap; transition:all .2s;
+}
+.btn-withdraw:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(245,200,66,.3); }
+.notice {
+  font-size:12px; color:var(--muted); margin-top:12px;
+  padding:10px 14px; background:rgba(255,255,255,.02);
+  border-radius:8px; border-left:3px solid var(--gold);
+}
+
+/* HISTORY */
+.hist-list { display:flex; flex-direction:column; gap:9px; }
+.hist-item {
+  background:var(--s1); border:1px solid rgba(255,255,255,.04);
+  border-radius:12px; padding:13px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  animation:fadeUp .3s ease;
+}
+.hist-l { display:flex; align-items:center; gap:12px; }
+.hist-ico {
+  width:34px; height:34px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.hist-ico.earn { background:rgba(46,204,113,.12); }
+.hist-ico.wd { background:rgba(245,200,66,.08); }
+.hist-lbl { font-weight:500; font-size:13px; }
+.hist-time { font-size:11px; color:var(--muted); }
+.hist-amt { font-weight:700; font-size:14px; }
+.hist-amt.earn { color:var(--green); }
+.hist-amt.wd { color:var(--gold); }
+.empty-state { text-align:center; color:var(--muted); padding:32px; font-size:14px; }
+
+/* ADVERTISER */
+.adv-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:28px; }
+.form-card {
+  background:var(--s1); border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--r); padding:22px;
+}
+.form-card h3 {
+  font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px;
+  color:var(--gold); margin-bottom:18px;
+}
+.fg { margin-bottom:14px; }
+.fg label { display:block; font-size:12px; color:var(--muted); margin-bottom:5px; }
+.fg input, .fg textarea, .fg select {
+  width:100%; padding:11px 13px; background:var(--s2);
+  border:1px solid rgba(255,255,255,.07); border-radius:10px;
+  color:var(--text); font-family:'Be Vietnam Pro',sans-serif; font-size:14px; outline:none;
+  transition:border-color .2s;
+}
+.fg textarea { resize:vertical; height:70px; }
+.fg input:focus, .fg textarea:focus, .fg select:focus { border-color:var(--gold); }
+.btn-submit {
+  width:100%; padding:13px; background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  color:#000; border:none; border-radius:10px;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:800; font-size:15px;
+  cursor:pointer; transition:all .2s;
+}
+.btn-submit:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(245,200,66,.3); }
+.adv-stats {
+  background:var(--s1); border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--r); padding:22px; display:flex; flex-direction:column; gap:0;
+}
+.adv-stats h3 {
+  font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px;
+  color:var(--gold); margin-bottom:16px;
+}
+.as-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:13px 0; border-bottom:1px solid rgba(255,255,255,.04);
+}
+.as-row:last-child { border-bottom:none; }
+.as-lbl { font-size:13px; color:var(--muted); }
+.as-val { font-weight:700; font-size:16px; color:var(--gold); }
+
+/* TABLE */
+.tbl-wrap {
+  background:var(--s1); border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--r); overflow:hidden; margin-bottom:28px;
+}
+.tbl-wrap table { width:100%; border-collapse:collapse; }
+.tbl-wrap th {
+  padding:13px 16px; text-align:left; font-size:11px;
+  letter-spacing:1px; text-transform:uppercase; color:var(--muted);
+  background:var(--s2); border-bottom:1px solid rgba(255,255,255,.05);
+}
+.tbl-wrap td { padding:13px 16px; font-size:13px; border-bottom:1px solid rgba(255,255,255,.04); }
+.tbl-wrap tr:last-child td { border-bottom:none; }
+.badge { display:inline-flex; padding:4px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.badge.on { background:rgba(46,204,113,.12); color:var(--green); }
+.badge.pending { background:rgba(245,200,66,.08); color:var(--gold); }
+
+/* MODAL */
+.modal-bg {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
+  z-index:300; align-items:center; justify-content:center;
+}
+.modal-bg.open { display:flex; }
+.modal {
+  background:var(--s1); border:1px solid rgba(245,200,66,.18);
+  border-radius:22px; padding:32px; max-width:400px; width:90%;
+  animation:popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+.modal h3 { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--gold); margin-bottom:6px; }
+.modal p { color:var(--muted); font-size:13px; margin-bottom:18px; }
+.modal-amt {
+  background:rgba(245,200,66,.07); border:1px solid rgba(245,200,66,.18);
+  border-radius:12px; padding:16px; text-align:center;
+  font-family:'Bebas Neue',sans-serif; font-size:44px; color:var(--gold);
+  margin-bottom:20px;
+}
+.modal-amt span { font-size:18px; font-family:'Be Vietnam Pro',sans-serif; color:var(--muted); }
+.modal-btns { display:flex; gap:12px; }
+.btn-cancel {
+  flex:1; padding:12px; background:var(--s2);
+  border:1px solid rgba(255,255,255,.08); border-radius:10px;
+  color:var(--text); font-family:'Be Vietnam Pro',sans-serif; font-weight:600; cursor:pointer;
+}
+.btn-confirm {
+  flex:2; padding:12px; background:linear-gradient(135deg,var(--gold),var(--gold-dk));
+  color:#000; border:none; border-radius:10px;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:800; cursor:pointer;
+}
+
+/* TOAST */
+#toast {
+  position:fixed; bottom:28px; right:28px; z-index:999;
+  background:var(--s2); border:1px solid rgba(245,200,66,.25);
+  border-radius:14px; padding:14px 22px;
+  display:flex; align-items:center; gap:10px;
+  font-weight:600; font-size:14px;
+  transform:translateY(80px); opacity:0;
+  transition:all .35s cubic-bezier(.34,1.56,.64,1);
+  max-width:340px;
+}
+#toast.show { transform:translateY(0); opacity:1; }
+
+/* LOADING SPINNER */
+#loading-screen {
+  position:fixed; inset:0; background:var(--bg);
+  display:flex; align-items:center; justify-content:center;
+  z-index:500; flex-direction:column; gap:16px;
+}
+.spinner {
+  width:44px; height:44px; border-radius:50%;
+  border:3px solid rgba(245,200,66,.15);
+  border-top-color:var(--gold);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+@media(max-width:640px){
+  .stats-row,.adv-grid{grid-template-columns:1fr}
+  .nav-right .wallet-pill,.user-pill{display:none}
+  nav{padding:0 12px}
+  .auth-box{padding:32px 22px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);letter-spacing:3px;">Ad<span style="color:var(--text)">Watch</span></div>
+  <div class="spinner"></div>
+</div>
+
+<!-- ══ AUTH SCREEN ══════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Ad<span>Watch</span></div>
+    <div class="auth-tagline">Xem quảng cáo · Kiếm tiền thật · Rút về ví</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Đăng nhập</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Đăng ký</button>
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <!-- LOGIN -->
+    <div id="tab-login">
+      <div class="form-field">
+        <label>EMAIL</label>
+        <input type="email" id="login-email" placeholder="email@example.com">
+      </div>
+      <div class="form-field">
+        <label>MẬT KHẨU</label>
+        <input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn-auth" onclick="doLogin()">Đăng nhập →</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="tab-register" style="display:none">
+      <div class="form-field">
+        <label>HỌ VÀ TÊN</label>
+        <input type="text" id="reg-name" placeholder="Nguyễn Văn A">
+      </div>
+      <div class="form-field">
+        <label>EMAIL</label>
+        <input type="email" id="reg-email" placeholder="email@example.com">
+      </div>
+      <div class="form-field">
+        <label>MẬT KHẨU (ít nhất 6 ký tự)</label>
+        <input type="password" id="reg-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn-auth" onclick="doRegister()">Tạo tài khoản →</button>
+    </div>
+
+    <div class="auth-perks">
+      <div class="perk"><div class="pi">🪙</div>30đ/quảng cáo</div>
+      <div class="perk"><div class="pi">💸</div>Rút từ 300đ</div>
+      <div class="perk"><div class="pi">🔒</div>Bảo mật 100%</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══════════════════════════════════════════ -->
+<div id="app-screen">
+  <nav>
+    <div class="logo">Ad<span>Watch</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchView('user',this)">👤 Người dùng</button>
+      <button class="nav-tab" onclick="switchView('advertiser',this)">📣 Nhà QC</button>
+    </div>
+    <div class="nav-right">
+      <div class="wallet-pill">💰 <span id="nav-bal">0đ</span></div>
+      <div class="user-pill">👤 <span id="nav-name">...</span></div>
+      <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+    </div>
+  </nav>
+
+  <!-- USER VIEW -->
+  <div class="view active" id="view-user">
+    <div class="container">
+      <div class="stats-row">
+        <div class="stat-card g">
+          <div class="sc-label">Số dư</div>
+          <div class="sc-val g" id="bal-display">0đ</div>
+          <div class="sc-sub">Rút tối thiểu 300đ</div>
+        </div>
+        <div class="stat-card gr">
+          <div class="sc-label">Đã xem hôm nay</div>
+          <div class="sc-val gr" id="watched-today">0</div>
+          <div class="sc-sub">quảng cáo</div>
+        </div>
+        <div class="stat-card b">
+          <div class="sc-label">Tổng đã kiếm</div>
+          <div class="sc-val b" id="total-earned">0đ</div>
+          <div class="sc-sub">toàn thời gian</div>
+        </div>
+      </div>
+
+      <div class="sec-title">📺 Quảng cáo đang chạy</div>
+      <div class="ad-grid" id="ad-grid"></div>
+
+      <div class="sec-title">💸 Rút tiền</div>
+      <div class="withdraw-card">
+        <div class="wr-row">
+          <div class="inp-grp">
+            <label>Số tiền (đ)</label>
+            <input type="number" id="wd-amt" placeholder="Nhập số tiền..." min="300">
+          </div>
+          <div class="inp-grp">
+            <label>Phương thức</label>
+            <select id="wd-method">
+              <option>MoMo</option><option>VNPay</option>
+              <option>Ngân hàng</option><option>ZaloPay</option>
+            </select>
+          </div>
+          <div class="inp-grp">
+            <label>Số tài khoản / SĐT</label>
+            <input type="text" id="wd-account" placeholder="0901234567">
+          </div>
+          <button class="btn-withdraw" onclick="requestWithdraw()">Rút →</button>
+        </div>
+        <div class="notice">⚡ 30đ/quảng cáo · Tối thiểu 300đ · Xử lý 1–3 ngày làm việc</div>
+      </div>
+
+      <div class="sec-title">📋 Lịch sử</div>
+      <div class="hist-list" id="hist-list">
+        <div class="empty-state">Chưa có giao dịch. Hãy xem quảng cáo đầu tiên! 🎯</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVERTISER VIEW -->
+  <div class="view" id="view-advertiser">
+    <div class="container">
+      <div class="adv-grid">
+        <div class="form-card">
+          <h3>📣 Đăng quảng cáo mới</h3>
+          <div class="fg"><label>Thương hiệu / Sản phẩm</label>
+            <input type="text" id="adv-brand" placeholder="VD: Coca-Cola Việt Nam"></div>
+          <div class="fg"><label>Tiêu đề</label>
+            <input type="text" id="adv-title" placeholder="VD: Ưu đãi hè 2025"></div>
+          <div class="fg"><label>Link video YouTube</label>
+            <input type="text" id="adv-video" placeholder="https://youtube.com/watch?v=..."></div>
+          <div class="fg"><label>Ngân sách (đ) – tối thiểu 300đ</label>
+            <input type="number" id="adv-budget" placeholder="VD: 5000" min="300"></div>
+          <div class="fg"><label>Mô tả ngắn</label>
+            <textarea id="adv-note" placeholder="Thông tin thêm về sản phẩm..."></textarea></div>
+          <button class="btn-submit" onclick="submitAd()">🚀 Đăng & Thanh toán</button>
+        </div>
+        <div>
+          <div class="adv-stats" style="margin-bottom:14px">
+            <h3>📊 Thống kê của tôi</h3>
+            <div class="as-row"><div class="as-lbl">Tổng lượt xem</div><div class="as-val" id="my-views">0</div></div>
+            <div class="as-row"><div class="as-lbl">Chi phí đã dùng</div><div class="as-val" id="my-spent">0đ</div></div>
+            <div class="as-row"><div class="as-lbl">Quảng cáo đang chạy</div><div class="as-val" id="my-active">0</div></div>
+            <div class="as-row"><div class="as-lbl">Ngân sách còn lại</div><div class="as-val" id="my-budget-left">0đ</div></div>
+          </div>
+          <div class="notice" style="border-radius:var(--r);padding:14px 16px;">
+            💡 <strong>Bảng giá:</strong><br>· 30đ / lượt xem hoàn thành<br>
+            · Ngân sách tối thiểu 300đ<br>· Ads được duyệt trong 24h<br>
+            · Thanh toán qua MoMo / VNPay
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">🗂️ Quảng cáo của tôi</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Thương hiệu</th><th>Tiêu đề</th>
+              <th>Ngân sách</th><th>Lượt xem</th><th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="adv-tbody">
+            <tr><td colspan="5" class="empty-state">Chưa có quảng cáo. Đăng ngay! 🚀</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="modal-bg" id="wd-modal">
+  <div class="modal">
+    <h3>Xác nhận rút tiền</h3>
+    <p>Tiền sẽ được chuyển trong 1–3 ngày làm việc.</p>
+    <div class="modal-amt" id="modal-amt">0 <span>đồng</span></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Hủy</button>
+      <button class="btn-confirm" onclick="confirmWithdraw()">✅ Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><span id="toast-icon">🎉</span> <span id="toast-msg"></span></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  FIREBASE CONFIG — THAY BẰNG CONFIG CỦA BẠN
+// ══════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ── AD POOL (mặc định) ──────────────────────────────────
+const DEFAULT_ADS = [
+  { id:'ad1', brand:'Coca-Cola Việt Nam', title:'Taste The Feeling – Hè 2025', videoId:'8SbUC-UaAxE', reward:30 },
+  { id:'ad2', brand:'Samsung Mobile',     title:'Galaxy S25 – Trải nghiệm AI', videoId:'dQw4w9WgXcQ', reward:30 },
+  { id:'ad3', brand:'Highlands Coffee',   title:'Cà phê phin buổi sáng',       videoId:'3JZ_D3ELwOQ', reward:30 },
+  { id:'ad4', brand:'Shopee Việt Nam',    title:'Siêu Sale 9.9 – Giảm 90%',   videoId:'L_jWHffIx5E', reward:30 },
+  { id:'ad5', brand:'Vinamilk',           title:'Sữa tươi – Tương lai Việt',   videoId:'JGwWNGJdvx8', reward:30 },
+  { id:'ad6', brand:'TikTok Shop',        title:'Mua sắm trực tiếp hôm nay',   videoId:'eVTXPUF4Oz4', reward:30 },
+];
+
+// ── STATE ────────────────────────────────────────────────
+let currentUser = null;
+let userData    = { balance:0, totalEarned:0, watchedToday:0, history:[], myAds:[], watchedAdsToday:[] };
+let pendingWd   = 0;
+const watching  = {};
+let allAds      = [...DEFAULT_ADS];
+
+// ══════════════════════════════════════════════════════════
+//  AUTH STATE
+// ══════════════════════════════════════════════════════════
+auth.onAuthStateChanged(async user => {
+  document.getElementById('loading-screen').style.display = 'none';
+  if (user) {
+    currentUser = user;
+    await loadUserData();
+    showApp();
+  } else {
+    currentUser = null;
+    showAuth();
+  }
+});
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display  = 'none';
+}
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display  = 'block';
+  document.getElementById('nav-name').textContent = userData.displayName || currentUser.email.split('@')[0];
+  renderAll();
+}
+
+// ── LOAD USER DATA ───────────────────────────────────────
+async function loadUserData() {
+  const snap = await db.collection('users').doc(currentUser.uid).get();
+  if (snap.exists) {
+    const d = snap.data();
+    // reset watchedToday nếu khác ngày
+    const today = new Date().toDateString();
+    userData = {
+      displayName:     d.displayName || '',
+      balance:         d.balance || 0,
+      totalEarned:     d.totalEarned || 0,
+      watchedToday:    d.lastWatchedDate === today ? (d.watchedToday || 0) : 0,
+      watchedAdsToday: d.lastWatchedDate === today ? (d.watchedAdsToday || []) : [],
+      history:         d.history || [],
+      myAds:           d.myAds || [],
+    };
+  } else {
+    userData = { displayName:'', balance:0, totalEarned:0, watchedToday:0, watchedAdsToday:[], history:[], myAds:[] };
+    await saveUserData();
+  }
+  // load ads từ firestore (của các advertiser khác)
+  await loadAllAds();
+}
+
+async function saveUserData() {
+  if (!currentUser) return;
+  await db.collection('users').doc(currentUser.uid).set({
+    displayName:     userData.displayName,
+    balance:         userData.balance,
+    totalEarned:     userData.totalEarned,
+    watchedToday:    userData.watchedToday,
+    watchedAdsToday: userData.watchedAdsToday,
+    lastWatchedDate: new Date().toDateString(),
+    history:         userData.history.slice(0,50),
+    myAds:           userData.myAds,
+    email:           currentUser.email,
+    updatedAt:       firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+async function loadAllAds() {
+  try {
+    const snap = await db.collection('ads').where('active','==',true).get();
+    const firestoreAds = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    allAds = [...DEFAULT_ADS, ...firestoreAds];
+  } catch(e) { allAds = [...DEFAULT_ADS]; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  AUTH ACTIONS
+// ══════════════════════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+  document.getElementById('tab-login').style.display    = tab==='login'    ? 'block' : 'none';
+  document.getElementById('tab-register').style.display = tab==='register' ? 'block' : 'none';
+  setAuthError('');
+}
+
+function setAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  if (!email||!pw) return setAuthError('Vui lòng điền đầy đủ thông tin.');
+  try {
+    await auth.signInWithEmailAndPassword(email, pw);
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found':'Email chưa được đăng ký.',
+      'auth/wrong-password':'Mật khẩu không đúng.',
+      'auth/invalid-email':'Email không hợp lệ.',
+      'auth/too-many-requests':'Quá nhiều lần thử. Vui lòng thử lại sau.',
+    };
+    setAuthError(msgs[e.code] || 'Đăng nhập thất bại. Thử lại.');
+  }
+}
+
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pw    = document.getElementById('reg-pw').value;
+  if (!name||!email||!pw) return setAuthError('Vui lòng điền đầy đủ thông tin.');
+  if (pw.length < 6) return setAuthError('Mật khẩu phải ít nhất 6 ký tự.');
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pw);
+    await cred.user.updateProfile({ displayName: name });
+    userData.displayName = name;
+    await saveUserData();
+    showToast(`Chào mừng ${name}! 🎉 Tài khoản đã được tạo.`);
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use':'Email này đã được sử dụng.',
+      'auth/invalid-email':'Email không hợp lệ.',
+      'auth/weak-password':'Mật khẩu quá yếu.',
+    };
+    setAuthError(msgs[e.code] || 'Đăng ký thất bại. Thử lại.');
+  }
+}
+
+async function doLogout() {
+  await auth.signOut();
+  showToast('👋 Đã đăng xuất!');
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════════
+function renderAll() {
+  updateStats();
+  renderAds();
+  renderHistory();
+  renderAdvTable();
+  updateAdvStats();
+}
+
+function updateStats() {
+  const b = userData.balance.toLocaleString();
+  const t = userData.totalEarned.toLocaleString();
+  document.getElementById('bal-display').textContent  = b+'đ';
+  document.getElementById('nav-bal').textContent      = b+'đ';
+  document.getElementById('watched-today').textContent = userData.watchedToday;
+  document.getElementById('total-earned').textContent  = t+'đ';
+}
+
+function renderAds() {
+  const grid = document.getElementById('ad-grid');
+  grid.innerHTML = allAds.map((ad,i) => {
+    const done = userData.watchedAdsToday.includes(ad.id);
+    return `
+    <div class="ad-card" id="adcard-${i}">
+      <div class="ad-thumb">
+        <iframe src="https://www.youtube.com/embed/${ad.videoId}?autoplay=0&mute=1&controls=0&modestbranding=1"
+          allow="autoplay" id="iframe-${i}"></iframe>
+        ${done ? '' : `<div class="play-overlay" onclick="startWatch(${i},'${ad.id}')"><div class="play-btn">▶</div></div>`}
+      </div>
+      <div class="ad-info">
+        <div class="ad-brand">${ad.brand}</div>
+        <div class="ad-title">${ad.title}</div>
+        <div class="ad-footer">
+          <div class="ad-reward">🪙 +${ad.reward}đ</div>
+          ${done
+            ? `<div class="watched-badge" style="width:auto;padding:6px 12px;font-size:12px;">✅ Đã xem hôm nay</div>`
+            : `<button class="watch-btn" id="watchbtn-${i}" onclick="startWatch(${i},'${ad.id}')">Xem ngay</button>`}
+        </div>
+      </div>
+      <div class="ad-progress" id="adprog-${i}">
+        <div class="pb-wrap"><div class="pb" id="pb-${i}"></div></div>
+        <div class="pb-txt" id="pb-txt-${i}">Đang xem... 0s / 15s</div>
+        <button class="done-btn" id="done-${i}" onclick="claimReward(${i},'${ad.id}',${ad.reward},'${ad.brand}')">
+          🎉 Nhận ${ad.reward}đ!
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── WATCH ────────────────────────────────────────────────
+function startWatch(i, adId) {
+  if (watching[i]) return;
+  if (userData.watchedAdsToday.includes(adId)) return showToast('✅ Bạn đã xem quảng cáo này hôm nay!');
+  watching[i] = true;
+
+  const card = document.getElementById(`adcard-${i}`);
+  card.classList.add('watching');
+  document.getElementById(`adprog-${i}`).style.display = 'block';
+
+  const iframe = document.getElementById(`iframe-${i}`);
+  iframe.src = iframe.src.replace('autoplay=0','autoplay=1');
+
+  const dur = 15; let elapsed = 0;
+  const bar = document.getElementById(`pb-${i}`);
+  const txt = document.getElementById(`pb-txt-${i}`);
+  const doneBtn = document.getElementById(`done-${i}`);
+
+  const iv = setInterval(() => {
+    elapsed++;
+    bar.style.width = (elapsed/dur*100)+'%';
+    txt.textContent = `Đang xem... ${elapsed}s / ${dur}s`;
+    if (elapsed >= dur) {
+      clearInterval(iv);
+      txt.textContent = '✅ Xong! Nhận thưởng của bạn.';
+      doneBtn.style.display = 'block';
+    }
+  }, 1000);
+}
+
+async function claimReward(i, adId, amount, brand) {
+  userData.balance      += amount;
+  userData.totalEarned  += amount;
+  userData.watchedToday += 1;
+  userData.watchedAdsToday.push(adId);
+  userData.history.unshift({
+    type:'earn', label:`Xem QC: ${brand}`, amount,
+    time: new Date().toLocaleString('vi-VN')
+  });
+
+  updateStats();
+  renderHistory();
+  showToast(`+${amount}đ từ ${brand}! 🎉`);
+
+  await saveUserData();
+
+  // update lượt xem trên firestore ad doc nếu là ad custom
+  try { await db.collection('ads').doc(adId).update({ views: firebase.firestore.FieldValue.increment(1) }); } catch(e){}
+
+  watching[i] = false;
+  renderAds();
+}
+
+// ── WITHDRAW ─────────────────────────────────────────────
+function requestWithdraw() {
+  const amt = parseInt(document.getElementById('wd-amt').value);
+  if (!amt || amt < 300) return showToast('❌ Tối thiểu rút 300đ!');
+  if (amt > userData.balance) return showToast('❌ Số dư không đủ!');
+  pendingWd = amt;
+  document.getElementById('modal-amt').innerHTML = `${amt.toLocaleString()} <span>đồng</span>`;
+  document.getElementById('wd-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('wd-modal').classList.remove('open'); }
+
+async function confirmWithdraw() {
+  const method  = document.getElementById('wd-method').value;
+  const account = document.getElementById('wd-account').value.trim() || 'Chưa cung cấp';
+
+  userData.balance -= pendingWd;
+  userData.history.unshift({
+    type:'wd', label:`Rút qua ${method} (${account})`, amount: pendingWd,
+    time: new Date().toLocaleString('vi-VN')
+  });
+
+  // Lưu yêu cầu rút vào firestore để admin xử lý
+  await db.collection('withdrawals').add({
+    uid:      currentUser.uid,
+    email:    currentUser.email,
+    name:     userData.displayName,
+    amount:   pendingWd,
+    method,
+    account,
+    status:   'pending',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+
+  await saveUserData();
+  updateStats();
+  renderHistory();
+  showToast(`💸 Yêu cầu rút ${pendingWd.toLocaleString()}đ đã gửi!`);
+  closeModal();
+  document.getElementById('wd-amt').value = '';
+  document.getElementById('wd-account').value = '';
+  pendingWd = 0;
+}
+
+// ── HISTORY ──────────────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById('hist-list');
+  if (!userData.history.length) {
+    list.innerHTML = '<div class="empty-state">Chưa có giao dịch. Hãy xem quảng cáo đầu tiên! 🎯</div>';
+    return;
+  }
+  list.innerHTML = userData.history.map(h => `
+    <div class="hist-item">
+      <div class="hist-l">
+        <div class="hist-ico ${h.type==='earn'?'earn':'wd'}">${h.type==='earn'?'📺':'💸'}</div>
+        <div>
+          <div class="hist-lbl">${h.label}</div>
+          <div class="hist-time">${h.time}</div>
+        </div>
+      </div>
+      <div class="hist-amt ${h.type==='earn'?'earn':'wd'}">
+        ${h.type==='earn'?'+':'-'}${h.amount.toLocaleString()}đ
+      </div>
+    </div>`).join('');
+}
+
+// ── ADVERTISER ───────────────────────────────────────────
+async function submitAd() {
+  const brand  = document.getElementById('adv-brand').value.trim();
+  const title  = document.getElementById('adv-title').value.trim();
+  const video  = document.getElementById('adv-video').value.trim();
+  const budget = parseInt(document.getElementById('adv-budget').value);
+  const note   = document.getElementById('adv-note').value.trim();
+
+  if (!brand||!title) return showToast('❌ Vui lòng điền đầy đủ!');
+  if (!budget||budget<300) return showToast('❌ Ngân sách tối thiểu 300đ!');
+
+  let videoId = 'dQw4w9WgXcQ';
+  const m = video.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (m) videoId = m[1];
+
+  const adDoc = {
+    brand, title, videoId, budget, budgetLeft: budget,
+    note, views: 0, reward: 30, active: true,
+    ownerId: currentUser.uid,
+    ownerEmail: currentUser.email,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  const ref = await db.collection('ads').add(adDoc);
+  userData.myAds.push({ id: ref.id, brand, title, budget, views:0, status:'active' });
+  await saveUserData();
+  await loadAllAds();
+
+  renderAds();
+  renderAdvTable();
+  updateAdvStats();
+  showToast(`🚀 Quảng cáo của ${brand} đã được đăng!`);
+
+  ['adv-brand','adv-title','adv-video','adv-budget','adv-note'].forEach(id =>
+    document.getElementById(id).value = '');
+}
+
+function renderAdvTable() {
+  const tbody = document.getElementById('adv-tbody');
+  if (!userData.myAds.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Chưa có quảng cáo. Đăng ngay! 🚀</td></tr>';
+    return;
+  }
+  tbody.innerHTML = userData.myAds.map(a => `
+    <tr>
+      <td>${a.brand}</td><td>${a.title}</td>
+      <td>${(a.budget||0).toLocaleString()}đ</td>
+      <td>${a.views||0}</td>
+      <td><span class="badge on">● Đang chạy</span></td>
+    </tr>`).join('');
+}
+
+function updateAdvStats() {
+  const total   = userData.myAds.reduce((s,a)=>s+(a.budget||0),0);
+  const spent   = userData.myAds.reduce((s,a)=>s+((a.views||0)*30),0);
+  const active  = userData.myAds.length;
+  document.getElementById('my-views').textContent      = userData.myAds.reduce((s,a)=>s+(a.views||0),0);
+  document.getElementById('my-spent').textContent      = spent.toLocaleString()+'đ';
+  document.getElementById('my-active').textContent     = active;
+  document.getElementById('my-budget-left').textContent= (total-spent).toLocaleString()+'đ';
+}
+
+// ── NAV ──────────────────────────────────────────────────
+function switchView(v, btn) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+// ── TOAST ────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
